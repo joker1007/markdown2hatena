@@ -1,20 +1,9 @@
 import System
 import Data.List
-import Control.Monad
 import Text.ParserCombinators.Parsec
 import LineParser
 import Trim
-
-data Node = HeadLine Int String
-            | ListLine Int String
-            | Paragraph String
-            deriving (Show)
-
-compile :: Node -> String
-compile (HeadLine level text) = (join $ take level $ repeat "*") ++ text
-compile (ListLine level text) = (join $ take (level-1) $ repeat "  ") ++ "- " ++ text
-compile (Paragraph "") = "\n"
-compile (Paragraph text) = text
+import Node
 
 sample :: String
 sample = "### 見出し1\n#見出し\n\ntest\ntest\n\n*list\n*list2"
