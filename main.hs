@@ -15,18 +15,12 @@ headline = do line <- firstChar (== '#')
               return $ [HeadLine (length mark) (trim str)]
 
 listblock :: LineParser [Node]
-listblock = do lines <- many1 (firstChar (isListMark))
-               sublines <- many (lineSatisfy isIndentedList)
-               let str = map (snd . span (isListMark)) lines
-                   nodes = map (ListLine 1 . trim) str
-                   subnodes = map (subListParse) sublines
-               return (nodes ++ subnodes)
+listblock = do lines <- many1 (lineSatisfy isListLine)
+               return $ map listParse lines
             where
-              isListMark :: Char -> Bool
-              isListMark = (`elem` "*+-")
-              subListParse :: String -> Node
-              subListParse cs = case runParser levelParser 1 "" cs of
-                                  Right (level, str'') -> ListLine level str''
+              listParse :: String -> Node
+              listParse cs = case runParser levelParser 1 "" cs of
+                                  Right (level, cs') -> ListLine level cs'
                                   Left err -> Paragraph $ show err
               levelParser :: GenParser Char Int (Int, String)
               levelParser = do try (count 4 space)
@@ -35,18 +29,18 @@ listblock = do lines <- many1 (firstChar (isListMark))
                             <|> do tab
                                    updateState (+1)
                                    levelParser
-                            <|> do satisfy isListMark
-                                   cs' <- many anyChar
+                            <|> do satisfy (`elem` "*+-")
+                                   cs'' <- many anyChar
                                    level' <- getState
-                                   return (level', trim cs')
+                                   return (level', trim cs'')
 
-isIndentedList :: String -> Bool
-isIndentedList cs = case parse p "" cs of
+isListLine :: String -> Bool
+isListLine cs = case parse p "" cs of
                       Right _ -> True
                       Left _ -> False
                     where
                       p :: Parser Bool
-                      p = do skipMany1 (space <|> tab)
+                      p = do skipMany (space <|> tab)
                              satisfy (`elem` "*+-")
                              return True
 
