@@ -9,7 +9,8 @@ module Node
 
   compile :: Node -> String
   compile (HeadLine level text) = (join $ take level $ repeat "*") ++ text
-  compile (ListLine level text) = (join $ take (level-1) $ repeat "  ") ++ "- " ++ text
+  compile (ListLine level text) = (join $ take level $ repeat "-") ++ text
   compile (Paragraph "") = "\n"
   compile (Paragraph text) = text
 
+  
