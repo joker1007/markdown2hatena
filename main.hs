@@ -6,9 +6,6 @@ import LineParser
 import Trim
 import Node
 
-sample :: String
-sample = "### 見出し1\n#見出し\n\ntest\ntest\n\n*list\n*list2"
-
 headline :: LineParser [Node]
 headline = do line <- firstChar (== '#')
               let (mark, str) = span (== '#') line
@@ -65,12 +62,6 @@ markParser = do isMark
                     return False
              where
                isMark = satisfy (`elem` "#*+->")
-
-run :: Show a => Parser a -> String -> IO()
-run p input = case (parse p "" input) of
-                Left err -> do putStr "parse error at "
-                               print err
-                Right x ->  do print x
 
 document :: LineParser String
 document = do nodes <- many1 block
