@@ -42,6 +42,38 @@ isListLine cs = case parse p "" cs of
                              return True
 
 
+numberedlistblock :: LineParser [Node]
+numberedlistblock = do lines <- many1 (lineSatisfy isNumberedListLine)
+                       return $ map listParse lines
+                    where
+                      listParse :: String -> Node
+                      listParse cs = case runParser levelParser 1 "" cs of
+                                          Right (level, cs') -> NumberedList level cs'
+                                          Left err -> Paragraph $ show err
+                      levelParser :: GenParser Char Int (Int, String)
+                      levelParser = do try (count 4 space)
+                                       updateState (+1)
+                                       levelParser
+                                    <|> do tab
+                                           updateState (+1)
+                                           levelParser
+                                    <|> do digit
+                                           char '.'
+                                           cs'' <- many anyChar
+                                           level' <- getState
+                                           return (level', trim cs'')
+
+isNumberedListLine :: String -> Bool
+isNumberedListLine cs = case parse p "" cs of
+                      Right _ -> True
+                      Left _ -> False
+                    where
+                      p :: Parser Bool
+                      p = do skipMany (space <|> tab)
+                             digit
+                             char '.'
+                             return True
+
 paragraph :: LineParser [Node]
 paragraph = do lines <- many1 $ lineSatisfy isNotMarkAndBlankLine
                return $ map Paragraph lines
@@ -73,6 +105,7 @@ block = do blank
            return $ [Paragraph ""]
         <|> headline
         <|> listblock
+        <|> numberedlistblock
         <|> paragraph
 
 main :: IO()
