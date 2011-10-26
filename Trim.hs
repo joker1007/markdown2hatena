@@ -1,5 +1,5 @@
 module Trim
-  (module Data.Char, ltrim, rtrim, trim) where
+  (ltrim, rtrim, trim) where
 
   import Data.Char
 
