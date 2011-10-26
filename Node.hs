@@ -24,15 +24,15 @@ module Node
                      Left err -> show err
                    where
                      p :: GenParser Char String String
-                     p = do linkText <- try(link)
-                            updateState (++ linkText)
+                     p = do elem <- try(link)
+                            updateState (++ elem)
                             p
                          <|> do c <- anyChar
                                 updateState (++ [c])
                                 p
                          <|> do eof
-                                text <- getState
-                                return text
+                                line <- getState
+                                return line
 
   link :: GenParser Char String String
   link = do char '['
