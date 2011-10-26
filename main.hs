@@ -1,7 +1,6 @@
 import System
 import Data.List
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Error
 import LineParser
 import Trim
 import Node
@@ -12,71 +11,43 @@ headline = do line <- firstChar (== '#')
               return $ [HeadLine (length mark) (trim str)]
 
 listblock :: LineParser [Node]
-listblock = do lines <- many1 (lineSatisfy isListLine)
-               return $ map listParse lines
+listblock = do manyLines <- many1 (lineSatisfy isListLine)
+               return $ map listParse manyLines
             where
               listParse :: String -> Node
               listParse cs = case runParser levelParser 1 "" cs of
-                                  Right (level, cs') -> ListLine level cs'
+                                  Right node -> node
                                   Left err -> Paragraph $ show err
-              levelParser :: GenParser Char Int (Int, String)
+              levelParser :: GenParser Char Int Node
               levelParser = do try (count 4 space)
                                updateState (+1)
                                levelParser
                             <|> do tab
                                    updateState (+1)
                                    levelParser
-                            <|> do satisfy (`elem` "*+-")
+                            <|> do listmark
                                    cs'' <- many anyChar
                                    level' <- getState
-                                   return (level', trim cs'')
-
-isListLine :: String -> Bool
-isListLine cs = case parse p "" cs of
-                      Right _ -> True
-                      Left _ -> False
-                    where
-                      p :: Parser Bool
-                      p = do skipMany (space <|> tab)
-                             satisfy (`elem` "*+-")
-                             return True
-
-
-numberedlistblock :: LineParser [Node]
-numberedlistblock = do lines <- many1 (lineSatisfy isNumberedListLine)
-                       return $ map listParse lines
-                    where
-                      listParse :: String -> Node
-                      listParse cs = case runParser levelParser 1 "" cs of
-                                          Right (level, cs') -> NumberedList level cs'
-                                          Left err -> Paragraph $ show err
-                      levelParser :: GenParser Char Int (Int, String)
-                      levelParser = do try (count 4 space)
-                                       updateState (+1)
-                                       levelParser
-                                    <|> do tab
-                                           updateState (+1)
-                                           levelParser
-                                    <|> do digit
-                                           char '.'
-                                           cs'' <- many anyChar
-                                           level' <- getState
-                                           return (level', trim cs'')
-
-isNumberedListLine :: String -> Bool
-isNumberedListLine cs = case parse p "" cs of
-                      Right _ -> True
-                      Left _ -> False
-                    where
-                      p :: Parser Bool
-                      p = do skipMany (space <|> tab)
-                             digit
-                             char '.'
-                             return True
+                                   return $ ListLine level' (trim cs'')
+                            <|> do numberedlistmark
+                                   cs'' <- many anyChar
+                                   level' <- getState
+                                   return $ NumberedList level' (trim cs'')
+              isListLine :: String -> Bool
+              isListLine cs = case parse p "" cs of
+                                    Right _ -> True
+                                    Left _ -> False
+                                  where
+                                    p :: Parser Bool
+                                    p = do skipMany (space <|> tab)
+                                           listmark <|> numberedlistmark
+                                           return True
+              listmark = satisfy (`elem` "*+-")
+              numberedlistmark = digit >> (char '.')
 
 paragraph :: LineParser [Node]
-paragraph = do lines <- many1 $ lineSatisfy isNotMarkAndBlankLine
-               return $ map Paragraph lines
+paragraph = do manyLines <- many1 $ lineSatisfy isNotMarkAndBlankLine
+               return $ map Paragraph manyLines
             where
               isNotMarkAndBlankLine :: String -> Bool
               isNotMarkAndBlankLine cs = (((0 < ) . length . trim) cs) && (isNotMarkLine cs)
@@ -105,7 +76,6 @@ block = do blank
            return $ [Paragraph ""]
         <|> headline
         <|> listblock
-        <|> numberedlistblock
         <|> paragraph
 
 main :: IO()
