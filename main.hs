@@ -1,5 +1,6 @@
 import System
 import Data.List
+import Control.Monad
 import Text.ParserCombinators.Parsec
 import LineParser
 import Trim

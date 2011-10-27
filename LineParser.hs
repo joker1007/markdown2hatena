@@ -1,6 +1,5 @@
 module LineParser
-  (module Text.ParserCombinators.Parsec.Prim,
-   LineParser, indented, blank, notBlank, lineSatisfy, firstChar) where
+  (LineParser, indented, blank, notBlank, lineSatisfy, firstChar) where
 
   import Text.ParserCombinators.Parsec
   import Text.ParserCombinators.Parsec.Prim

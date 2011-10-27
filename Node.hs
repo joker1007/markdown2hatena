@@ -1,5 +1,5 @@
 module Node
-  (module Control.Monad, Node(..), compile) where
+  (Node(..), compile) where
 
   import Text.ParserCombinators.Parsec
   import Control.Monad
